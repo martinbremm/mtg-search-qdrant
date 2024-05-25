@@ -6,7 +6,7 @@ from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
-from bm25.bm25_indexer import BM25Manager
+from bm25_indexer import BM25Manager
 
 
 # https://stackoverflow.com/questions/62691279/how-to-disable-tokenizers-parallelism-true-false-warning

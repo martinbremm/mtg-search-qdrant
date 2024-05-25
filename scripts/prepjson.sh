@@ -4,4 +4,4 @@ unzip -o mtgjson/data/cards.csv.zip -d mtgjson/data/
 
 rm mtgjson/data/cards.csv.zip
 
-python mtgjson/prepjson.py
+python src/prepjson.py
