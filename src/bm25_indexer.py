@@ -23,5 +23,5 @@ class BM25Manager:
     def retrieve(self, query: str) -> List[Document]:
         retriever = BM25Retriever.from_documents(self.loader.load())
 
-        logging.info("Retrieving BM25 documents according to query: {query}")
+        logging.info(f"Retrieving BM25 documents according to query: {query}")
         return retriever.get_relevant_documents(query)
