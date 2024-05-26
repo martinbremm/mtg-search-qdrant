@@ -5,17 +5,32 @@ from fastembed import TextEmbedding
 from typing import List
 
 
-def prepare_df(file_path: str = "mtgjson/data/cards.csv") -> pd.DataFrame:
+def construct_scryfall_image_path(scryfall_id: str, image_type: str = "large", image_format: str = ".jpg", face: str = "front") -> str:
+    return f"https://cards.scryfall.io/{image_type}/{face}/{scryfall_id[0]}/{scryfall_id[1]}/{scryfall_id}{image_format}"
+
+
+def prepare_df(file_path: str = "mtgjson/data/cards.csv", image_df_file_path: str = "mtgjson/data/cardIdentifiers.csv") -> pd.DataFrame:
     try:
-        df = pd.read_csv(file_path, low_memory=False).head()
+        cards_df = pd.read_csv(file_path, low_memory=False)
+        image_df = pd.read_csv(image_df_file_path, low_memory=False)
     except FileNotFoundError:
         raise Exception(f"Could not create DataFrame, because there was no csv file found at '{file_path}'.")
 
+    # joining cards and cardIdentifier frames together to retrieve the ScryfallId
+    # used to get the Scryfall image paths
+    df = cards_df.merge(image_df, on="uuid")
+    
+    # complete Scryfall image path for the front and back 
+    df["scryfall_card_front_image_url"] = df.apply(lambda row: construct_scryfall_image_path(row["scryfallId"], face="front"), axis=1)
+    df["scryfall_card_back_image_url"] = df.apply(lambda row: construct_scryfall_image_path(row["scryfallId"], face="back") if row["scryfallCardBackId"] != "0aeebaf5-8c7d-4636-9e82-8c27447861f7" else None, axis=1)
+    
     df = df[[
+        "scryfall_card_back_image_url",
         "colorIdentity", 
         "defense",
         "edhrecRank",
         "edhrecSaltiness",
+        "scryfall_card_front_image_url",
         "isReprint",
         "keywords",
         "manaCost",
@@ -25,11 +40,13 @@ def prepare_df(file_path: str = "mtgjson/data/cards.csv") -> pd.DataFrame:
         "power",
         "printings",
         "rarity",
+        "scryfallId",
         "setCode",
         "subtypes",
         "text",
         "type",
         "types",
+        "uuid"
     ]]
 
     df = df.dropna(subset="text").reset_index(drop=True)

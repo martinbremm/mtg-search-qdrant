@@ -1,5 +1,8 @@
 import os
+import requests
+from io import BytesIO
 import streamlit as st
+from PIL import Image
 
 from fastembed import TextEmbedding
 # from openai import OpenAI
@@ -79,4 +82,10 @@ if st.button("Generate Output"):
     # st.write(completion.choices[0].message.content)
     
     st.write("Hybrid Search")
-    st.write([(r.get("name"), r.get("text")) for r in semantic_search_cards])
+     
+    for card in semantic_search_cards:
+        response = requests.get(card.get("scryfall_card_front_image_url"))
+        img = Image.open(BytesIO(response.content))
+        st.image(img)
+        st.write(card)
+    
