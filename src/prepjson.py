@@ -7,7 +7,7 @@ from typing import List
 
 def prepare_df(file_path: str = "mtgjson/data/cards.csv") -> pd.DataFrame:
     try:
-        df = pd.read_csv(file_path, low_memory=False)
+        df = pd.read_csv(file_path, low_memory=False).head()
     except FileNotFoundError:
         raise Exception(f"Could not create DataFrame, because there was no csv file found at '{file_path}'.")
 
@@ -78,4 +78,4 @@ def create_card_embeddings(df: pd.DataFrame, categorical_embeddings: bool = Fals
     
 if __name__ == "__main__":
     df = prepare_df()
-    create_card_embeddings(df)
+    # create_card_embeddings(df)

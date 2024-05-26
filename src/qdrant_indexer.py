@@ -2,6 +2,7 @@ import logging
 import time
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from typing import List
 from fastembed import TextEmbedding
@@ -18,6 +19,10 @@ class QdrantManager(QdrantClient):
         )
 
         logging.basicConfig(level=logging.INFO)
+        
+        self.set_model("sentence-transformers/all-MiniLM-L6-v2")
+        # comment this line to use dense vectors only
+        self.set_sparse_model("prithivida/Splade_PP_en_v1")
 
     def create_index(self, collection_name: str) -> None:
         logging.info(f"Creating collection: {collection_name}")
@@ -25,7 +30,9 @@ class QdrantManager(QdrantClient):
         if collection_name not in qdrant_manager.get_collections():
             qdrant_manager.recreate_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+                vectors_config=qdrant_manager.get_fastembed_vector_params(),
+                # comment this line to use dense vectors only
+                sparse_vectors_config=qdrant_manager.get_fastembed_sparse_vector_params(),  
             )
             logging.info(f"Collection '{collection_name}' created successfully.")
 
@@ -37,23 +44,18 @@ class QdrantManager(QdrantClient):
                                   collection_name: str,
                                   documents: List[str],
                                   ids: List[int] = None,
-                                  payloads: List[dict] = None,
+                                  metadata: List[dict] = None,
                                   embeddings: List[np.ndarray] = None) -> None:
         logging.info(f"Uploading {len(documents)} documents into collection {collection_name} ...")
-
-        if not embeddings:
-            # https://huggingface.co/BAAI/bge-base-en
-            embedding_model = TextEmbedding(model_name="BAAI/bge-base-en")
-            embeddings: List[np.ndarray] = list(embedding_model.embed(docs))
-
+            
         try:
-            self.upload_collection(
+            self.add(
                 collection_name=collection_name,
-                ids=ids,
-                payload=payloads,
-                vectors=embeddings,
-                parallel=4,
-                max_retries=3
+                ids=ids if ids else tqdm(range(len(documents))),
+                documents=documents,
+                metadata=metadata,
+                # parallel=0,  # Use all available CPU cores to encode data. 
+                # Requires wrapping code into if __name__ == '__main__' block
                 )
 
             logging.info(f"Successfully uploaded {len(documents)} documents into collection {collection_name}")
@@ -70,22 +72,19 @@ if __name__ == "__main__":
 
     qdrant_manager.create_index(collection_name=collection_name)
 
-    df = pd.read_parquet("mtgjson/data/cards_embedded.parquet")
+    df = pd.read_csv("mtgjson/data/cards_preprocessed.csv")
     df = df.replace({np.nan: None})
 
-
     docs: List[str] = df["text"].to_list()
-    ids: List[int] = df.index.to_list()
-    #embeddings = df["embeddings"]
-
-    payloads: List[dict] = df.drop(columns=["embeddings"]).to_dict(orient="records")
+    
+    metadata: List[dict] = df.drop(columns=["embeddings"]).to_dict(orient="records") if "embeddings" in df.columns else df.to_dict(orient="records")
 
     start = time.time()
     qdrant_manager.upload_embedded_documents(collection_name=collection_name,
                                              documents=docs,
-                                             ids=ids,
-                                             payloads=payloads)
+                                             metadata=metadata)
     end = time.time()
+    
     logging.info(f"Uploading embeddings took {round(end-start, 3)} seconds.")
 
     print(qdrant_manager.scroll(

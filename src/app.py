@@ -6,7 +6,7 @@ from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
-from bm25_indexer import BM25Manager
+from hybrid_searcher import HybridSearcher
 
 
 # https://stackoverflow.com/questions/62691279/how-to-disable-tokenizers-parallelism-true-false-warning
@@ -18,14 +18,11 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 # )
 
 
-# Setting up FastEmbed
-embedding_model = TextEmbedding(model_name="BAAI/bge-base-en")
-
 # Setting up OpenSearch Client
 qdrant_manager = QdrantClient()
 
-# Setting up BM25 Manager
-bm25_manager = BM25Manager()
+# Create a neural searcher instance
+hybrid_searcher = HybridSearcher(collection_name="mtg-search")
 
 
 # Defining the system prompt
@@ -65,27 +62,9 @@ query = st.text_area("Enter your prompt", "Show me cards that counter opponents 
 
 if st.button("Generate Output"):
 
-    semantic_search_cards = qdrant_manager.search(
-        collection_name="mtg-search",
-        # query_filter=models.Filter(
-        #     must=[
-        #         models.FieldCondition(
-        #             key="city",
-        #             match=models.MatchValue(
-        #                 value="London",
-        #             ),
-        #         )
-        #     ]
-        # ),
-        search_params=models.SearchParams(hnsw_ef=128, exact=False),
-        query_vector=list(embedding_model.embed(query))[0],
-        #limit=10,
-    )
-    # sorting results according to edhrec rank
-    semantic_search_cards = sorted(semantic_search_cards, key=lambda x: x.payload['edhrecRank'], reverse=True)
+    semantic_search_cards = hybrid_searcher.search(
+        text=query)
     
-    bm25_search_cards = bm25_manager.retrieve(query=query)
-
     # response = "".join(response_cards)
     
     # # Generating comprehensive answer with llamafile
@@ -99,9 +78,5 @@ if st.button("Generate Output"):
     # st.text("Generated Output:")
     # st.write(completion.choices[0].message.content)
     
-    st.write("Semantic Search")
-    st.write([(r.payload.get("name"), r.payload.get("text")) for r in semantic_search_cards])
-    
-    st.write("BM25")
-    st.write([(r.page_content, r.metadata.get("text")) for r in bm25_search_cards])
-    
+    st.write("Hybrid Search")
+    st.write([(r.get("name"), r.get("text")) for r in semantic_search_cards])
