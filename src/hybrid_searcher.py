@@ -4,6 +4,7 @@ from qdrant_client import QdrantClient
 class HybridSearcher:
     DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
     SPARSE_MODEL = "prithivida/Splade_PP_en_v1"
+
     def __init__(self, collection_name):
         self.collection_name = collection_name
         # initialize Qdrant client
@@ -19,9 +20,9 @@ class HybridSearcher:
             query_filter=None,  # If you don't want any filters for now
             limit=5,  # 5 the closest results
         )
-        # `search_result` contains found vector ids with similarity scores 
+        # `search_result` contains found vector ids with similarity scores
         # along with the stored payload
-        
+
         # Select and return metadata
         metadata = [hit.metadata for hit in search_result]
         return metadata

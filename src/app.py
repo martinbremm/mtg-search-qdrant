@@ -4,10 +4,9 @@ from io import BytesIO
 import streamlit as st
 from PIL import Image
 
-from fastembed import TextEmbedding
+
 # from openai import OpenAI
 from qdrant_client import QdrantClient
-from qdrant_client.http import models
 
 from hybrid_searcher import HybridSearcher
 
@@ -61,15 +60,16 @@ Here are the cards the search found:
 # Streamlit UI
 st.title("Magic: The Gathering Search App")
 
-query = st.text_area("Enter your prompt", "Show me cards that counter opponents creature spells.")
+query = st.text_area(
+    "Enter your prompt", "Show me cards that counter opponents creature spells."
+)
 
 if st.button("Generate Output"):
 
-    semantic_search_cards = hybrid_searcher.search(
-        text=query)
-    
+    semantic_search_cards = hybrid_searcher.search(text=query)
+
     # response = "".join(response_cards)
-    
+
     # # Generating comprehensive answer with llamafile
     # completion = openai_client.chat.completions.create(
     #     model="LLaMA_CPP",
@@ -80,12 +80,11 @@ if st.button("Generate Output"):
     # )
     # st.text("Generated Output:")
     # st.write(completion.choices[0].message.content)
-    
+
     st.write("Hybrid Search")
-     
+
     for card in semantic_search_cards:
         response = requests.get(card.get("scryfall_card_front_image_url"))
         img = Image.open(BytesIO(response.content))
         st.image(img)
         st.write(card)
-    

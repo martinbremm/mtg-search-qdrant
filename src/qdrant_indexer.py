@@ -5,9 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from typing import List
-from fastembed import TextEmbedding
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import Batch, Distance, VectorParams
 
 
 class QdrantManager(QdrantClient):
