@@ -39,15 +39,15 @@ This is a prototype for a semantic search engine, powered by Qdrant. The idea is
 
 2. **Setup MTG data**: Run setup script to download the MTG card data and preprocess it:
    ```sh
-   sh mtgjson/prepjson.sh
+   sh scripts/prepjson.sh
 
 3. **Setup Qdrant container**: Run setup script to initialize Docker container and load the embedded MTG card data into a collection:
    ```sh
-   sh qdrant/setup.sh
+   sh scripts/setup.sh
 
 4. **Run Streamlit App**: After indexing, run the Streamlit App to search through the collection of MTG cards:
    ```sh
-   streamlit run app.py
+   streamlit run src/app.py
 
 
 ## License
